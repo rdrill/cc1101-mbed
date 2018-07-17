@@ -1,5 +1,5 @@
 # cc1101-mbed
-STM32 MBED port of the Space Teddy`s Arduino\Raspberry library
+STM32 MBED port for the Space_Teddy's Arduino\Raspberry library
 
 ### How o setup
 
@@ -7,6 +7,7 @@ STM32 MBED port of the Space Teddy`s Arduino\Raspberry library
 ```
 #define MY_ADDR 0x01
 #define MY_CHAN 0x02
+#define TG_ADDR 0x03 //TX target address
 #define MY_FREQ 0x02
 #define MY_MODE 0x01
 ```
