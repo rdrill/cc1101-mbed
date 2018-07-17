@@ -11,7 +11,7 @@
 #define FALSE 0
 
 #define MY_ADDR 0x01
-//#define TG_ADDR 0x03
+#define TG_ADDR 0x03 // TX target address
 #define MY_CHAN 0x02
 #define MY_FREQ 0x02
 #define MY_MODE 0x01
