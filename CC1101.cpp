@@ -14,9 +14,9 @@
 
     Serial dbs(PA_2, PA_3);
     DigitalOut csn(PB_12);
-    DigitalIn _gdo2(PA_8);
+    DigitalIn gdo2(PA_8);
     DigitalIn RDmiso(PA_9);
-    SPI  _spi(PB_15, PB_14, PB_13);
+    SPI  spi(PB_15, PB_14, PB_13);
 
 //-------------------[global EEPROM default settings 868 Mhz]-------------------
 static uint8_t cc1100_GFSK_1_2_kb[] = {
@@ -381,8 +381,8 @@ uint8_t CC1100::begin()
     uint8_t partnum, version;
                 //setup AVR GPIO ports
     csn = 1;
-    _spi.format(8,0);
-    _spi.frequency(500000);
+    spi.format(8,0);
+    spi.frequency(500000);
 
     set_debug_level(set_debug_level());   //set debug level of CC1101 outputs
 
@@ -736,11 +736,11 @@ void CC1100::sent_acknolage(uint8_t my_addr, uint8_t tx_addr)
 //----------------------[check if Packet is received]---------------------------
 uint8_t CC1100::packet_available()
 {
-    if(_gdo2 == 1)                           //if RF package received
+    if(gdo2 == 1)                           //if RF package received
     {
         if(spi_read_register(IOCFG2) == 0x06)               //if sync word detect mode is used
         {
-            while(_gdo2 == 1){               //wait till sync word is fully received
+            while(gdo2 == 1){               //wait till sync word is fully received
                // dbs.printf("!");
             }
         }
@@ -1242,7 +1242,7 @@ uint8_t CC1100::check_crc(uint8_t lqi)
 //}
 //-------------------------------[end]------------------------------------------
 //|============================= SPI Transmission =============================|
-// uint8_t CC1100::_spi.write(uint8_t data)
+// uint8_t CC1100::spi.write(uint8_t data)
 // {
 //     SPDR = data;
 //   while( !( SPSR & (1<<SPIF) ) );       // Warten bis Byte gesendet wurde
@@ -1254,7 +1254,7 @@ void CC1100::spi_write_strobe(uint8_t spi_instr)
 {
     // csn = 0;          // CS low
     // while(RDmiso);  // Wait until MOSI_PIN becomes LOW
-    // _spi.write(spi_instr);
+    // spi.write(spi_instr);
     // csn = 1;         // CS high
 
     unsigned char x;
@@ -1262,7 +1262,7 @@ void CC1100::spi_write_strobe(uint8_t spi_instr)
     csn = 0;
     wait(0.000002);
     while (RDmiso);
-    x = _spi.write(spi_instr);
+    x = spi.write(spi_instr);
     wait(0.000002);
     csn = 1;
    // return x;
@@ -1273,8 +1273,8 @@ uint8_t CC1100::spi_read_status(uint8_t spi_instr)
 {
     csn = 0;          // CS low
     while(RDmiso);  // Wait until MOSI_PIN becomes LOW
-    _spi.write(spi_instr | Read_burst);
-    spi_instr = _spi.write(0xFF);
+    spi.write(spi_instr | Read_burst);
+    spi_instr = spi.write(0xFF);
     csn = 1;         // CS high
     return spi_instr;
 }
@@ -1284,8 +1284,8 @@ uint8_t CC1100::spi_read_register(uint8_t spi_instr)
 {
     csn = 0;          // CS low
     while(RDmiso);  // Wait until MOSI_PIN becomes LOW
-    _spi.write(spi_instr | READ_SINGLE_BYTE);
-    spi_instr = _spi.write(0xFF);
+    spi.write(spi_instr | READ_SINGLE_BYTE);
+    spi_instr = spi.write(0xFF);
     csn = 1;         // CS high
 
     return spi_instr;
@@ -1295,11 +1295,11 @@ void CC1100::spi_read_burst(uint8_t spi_instr, uint8_t *pArr, uint8_t length)
 {
     csn = 0;          // CS low
     while(RDmiso);  //Wait until MOSI_PIN becomes LOW
-    _spi.write(spi_instr | READ_BURST);
+    spi.write(spi_instr | READ_BURST);
 
     for(uint8_t i=0; i<length; i++)
         {
-            pArr[i] = _spi.write(0xFF);
+            pArr[i] = spi.write(0xFF);
         }
 
     csn = 1;
@@ -1309,8 +1309,8 @@ void CC1100::spi_write_register(uint8_t spi_instr, uint8_t value)
 {
     csn = 0;          // CS low
     while(RDmiso);  //Wait until MOSI_PIN becomes LOW
-    _spi.write(spi_instr | WRITE_SINGLE_BYTE);
-    _spi.write(value);
+    spi.write(spi_instr | WRITE_SINGLE_BYTE);
+    spi.write(value);
     csn = 1;
 }
 //|======= Mehrere hintereinanderliegende Register auf einmal schreiben =======|
@@ -1318,11 +1318,11 @@ void CC1100::spi_write_burst(uint8_t spi_instr, uint8_t *pArr, uint8_t length)
 {
     csn = 0;          // CS low
     while(RDmiso);  //Wait until MOSI_PIN becomes LOW
-    _spi.write(spi_instr | WRITE_BURST);
+    spi.write(spi_instr | WRITE_BURST);
 
     for(uint8_t i=0; i<length ;i++)
     {
-        _spi.write(pArr[i]);
+        spi.write(pArr[i]);
     }
 
     csn = 1;
