@@ -11,18 +11,11 @@
 #define FALSE 0
 
 #define MY_ADDR 0x01
-#define TG_ADDR 0x03
+//#define TG_ADDR 0x03
 #define MY_CHAN 0x02
 #define MY_FREQ 0x02
 #define MY_MODE 0x01
 
-//**************************** pins ******************************************//
-// #define SCK_PIN  13
-// #define MISO_PIN 12
-// #define MOSI_PIN 11
-// #define SS_PIN   10
-// #define GDO2      3                     //2 main, 5 remote, 3 M16
-// #define GDO0     99
 
 /*----------------------[CC1100 - misc]---------------------------------------*/
 #define CRYSTAL_FREQUENCY         26000000
