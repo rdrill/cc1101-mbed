@@ -1,7 +1,7 @@
 # cc1101-mbed
 STM32 MBED port for the Space_Teddy's Arduino\Raspberry library
 
-### How o setup
+### How to setup
 
 - open CC1101.h and fit your module settings by editing the flags
 ```
