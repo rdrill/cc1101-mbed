@@ -1,21 +1,11 @@
-/*------------------------------------------------------------------------------
-'                     CC1100 MODIFIED MBED Library
-'                     ----------------------
-'
-'
-'
-'
-'
-'  module contains helper code from other people. Thx for that
-'-----------------------------------------------------------------------------*/
 #include "mbed.h"
 #include "CC1101.h"
 
 
     Serial dbs(PA_2, PA_3);
     DigitalOut csn(PB_12);
-    DigitalIn gdo2(PA_8);
-    DigitalIn RDmiso(PA_9);
+    DigitalIn gdo2(PA_6);
+    DigitalIn RDmiso(PA_15);
     SPI  spi(PB_15, PB_14, PB_13);
 
 //-------------------[global EEPROM default settings 868 Mhz]-------------------
@@ -382,7 +372,7 @@ uint8_t CC1100::begin()
                 //setup AVR GPIO ports
     csn = 1;
     spi.format(8,0);
-    spi.frequency(500000);
+    spi.frequency(50000);
 
     set_debug_level(set_debug_level());   //set debug level of CC1101 outputs
 
@@ -421,9 +411,12 @@ uint8_t CC1100::begin()
 
     //set modulation mode
     set_mode(MY_MODE);
-
-    //set ISM band
-    set_ISM(MY_FREQ);
+    spi_write_burst(WRITE_BURST,cc1100_GFSK_1_2_kb,CFG_REGISTER);
+    
+    spi_write_register(FREQ2,0x10);                                         //stores the new freq setting for defined ISM band
+    spi_write_register(FREQ1,0xB0);
+    spi_write_register(FREQ0,0x71);
+    spi_write_burst(PATABLE_BURST,patable_power_433,8);  
 
     //set channel
     set_channel(MY_CHAN);
@@ -466,11 +459,11 @@ void CC1100::show_register_settings(void)
 
       for(uint8_t i = 0 ; i < CFG_REGISTER; i++)  //showes rx_buffer for debug
       {
-          printf("0x%02X ", config_reg_verify[i]);
-          if(i==9 || i==19 || i==29 || i==39) //just for beautiful output style
-          {
-              dbs.printf("\r\n");
-          }
+          printf("%d: 0x%02X ;\r\n",i, config_reg_verify[i]);
+          wait_ms(10);
+//          if(i==10 || i==20 || i==30 || i==40){
+//              dbs.printf("\r\n");
+//          }
       }
       dbs.printf("\r\n");
       dbs.printf("PaTable:\r\n");
@@ -908,32 +901,32 @@ void CC1100::set_channel(uint8_t channel)
 //-[set modulation mode 1 = GFSK_1_2_kb; 2 = GFSK_38_4_kb; 3 = GFSK_100_kb; 4 = MSK_250_kb; 5 = MSK_500_kb; 6 = OOK_4_8_kb]-
 void CC1100::set_mode(uint8_t mode)
 {
-    uint8_t Cfg_reg[CFG_REGISTER];
-
-    switch (mode)
-    {
-        case 0x01:
-                    spi_write_burst(WRITE_BURST,cc1100_GFSK_1_2_kb,CFG_REGISTER);
-                    break;
-        case 0x02:
-                    spi_write_burst(WRITE_BURST,cc1100_GFSK_38_4_kb,CFG_REGISTER);
-                    break;
-        case 0x03:
-                    spi_write_burst(WRITE_BURST,cc1100_GFSK_100_kb,CFG_REGISTER);
-                    break;
-        case 0x04:
-                    spi_write_burst(WRITE_BURST,cc1100_MSK_250_kb,CFG_REGISTER);
-                    break;
-        case 0x05:
-                    spi_write_burst(WRITE_BURST,cc1100_MSK_500_kb,CFG_REGISTER);
-                    break;
-        case 0x06:
-                    spi_write_burst(WRITE_BURST,cc1100_OOK_4_8_kb,CFG_REGISTER);
-                    break;
-        default:
-                    spi_write_burst(WRITE_BURST,cc1100_GFSK_100_kb,CFG_REGISTER);
-                    break;
-}
+    //uint8_t Cfg_reg[CFG_REGISTER];
+//
+//    switch (mode)
+//    {
+//        case 0x01:
+//                    spi_write_burst(WRITE_BURST,cc1100_GFSK_1_2_kb,CFG_REGISTER);
+//                    break;
+//        case 0x02:
+//                    spi_write_burst(WRITE_BURST,cc1100_GFSK_38_4_kb,CFG_REGISTER);
+//                    break;
+//        case 0x03:
+//                    spi_write_burst(WRITE_BURST,cc1100_GFSK_100_kb,CFG_REGISTER);
+//                    break;
+//        case 0x04:
+//                    spi_write_burst(WRITE_BURST,cc1100_MSK_250_kb,CFG_REGISTER);
+//                    break;
+//        case 0x05:
+//                    spi_write_burst(WRITE_BURST,cc1100_MSK_500_kb,CFG_REGISTER);
+//                    break;
+//        case 0x06:
+//                    spi_write_burst(WRITE_BURST,cc1100_OOK_4_8_kb,CFG_REGISTER);
+//                    break;
+//        default:
+//                    spi_write_burst(WRITE_BURST,cc1100_GFSK_100_kb,CFG_REGISTER);
+//                    break;
+//}
                         //writes all 47 config register
 
 //    if(MY_MODE != mode)
@@ -946,56 +939,56 @@ void CC1100::set_mode(uint8_t mode)
 //---------[set ISM Band 1=315MHz; 2=433MHz; 3=868MHz; 4=915MHz]----------------
 void CC1100::set_ISM(uint8_t ism_freq)
 {
-    uint8_t freq2, freq1, freq0;
-    uint8_t Patable[8];
-
-    switch (ism_freq)                                                       //loads the RF freq which is defined in MY_FREQ
-    {
-         case 0x01:                                                          //315MHz
-                    freq2=0x0C;
-                    freq1=0x1D;
-                    freq0=0x89;
-                    spi_write_burst(PATABLE_BURST,patable_power_315,8);
-                    break;
-        case 0x02:                                                          //433.92MHz
-                    freq2=0x10;
-                    freq1=0xB0;
-                    freq0=0x71;
-                    spi_write_burst(PATABLE_BURST,patable_power_433,8);
-                    break;
-        case 0x03:                                                          //868.3MHz
-                    freq2=0x21;
-                    freq1=0x65;
-                    freq0=0x6A;
-                    spi_write_burst(PATABLE_BURST,patable_power_868,8);
-                    break;
-        case 0x04:                                                          //915MHz
-                    freq2=0x23;
-                    freq1=0x31;
-                    freq0=0x3B;
-                    spi_write_burst(PATABLE_BURST,patable_power_915,8);
-                    break;
-        /*
-        case 0x05:                                                          //2430MHz
-                    freq2=0x5D;
-                    freq1=0x76;
-                    freq0=0x27;
-                    spi_write_burst(PATABLE_BURST,patable_power_2430,8);
-                    break;
-        */
-        default:                                                             //default is 868.3MHz
-                    freq2=0x21;
-                    freq1=0x65;
-                    freq0=0x6A;
-                    spi_write_burst(PATABLE_BURST,patable_power_868,8);    //sets up output power ramp register
-                    break;
-    }
-
-    spi_write_register(FREQ2,freq2);                                         //stores the new freq setting for defined ISM band
-    spi_write_register(FREQ1,freq1);
-    spi_write_register(FREQ0,freq0);
-
-    spi_write_burst(PATABLE_BURST,Patable,8);                                //writes output power settings to cc1100
+//    uint8_t freq2, freq1, freq0;
+//    uint8_t Patable[8];
+//
+//    switch (ism_freq)                                                       //loads the RF freq which is defined in MY_FREQ
+//    {
+//         case 0x01:                                                          //315MHz
+//                    freq2=0x0C;
+//                    freq1=0x1D;
+//                    freq0=0x89;
+//                    spi_write_burst(PATABLE_BURST,patable_power_315,8);
+//                    break;
+//        case 0x02:                                                          //433.92MHz
+//                    freq2=0x10;
+//                    freq1=0xB0;
+//                    freq0=0x71;
+//                    spi_write_burst(PATABLE_BURST,patable_power_433,8);
+//                    break;
+//        case 0x03:                                                          //868.3MHz
+//                    freq2=0x21;
+//                    freq1=0x65;
+//                    freq0=0x6A;
+//                    spi_write_burst(PATABLE_BURST,patable_power_868,8);
+//                    break;
+//        case 0x04:                                                          //915MHz
+//                    freq2=0x23;
+//                    freq1=0x31;
+//                    freq0=0x3B;
+//                    spi_write_burst(PATABLE_BURST,patable_power_915,8);
+//                    break;
+//        /*
+//        case 0x05:                                                          //2430MHz
+//                    freq2=0x5D;
+//                    freq1=0x76;
+//                    freq0=0x27;
+//                    spi_write_burst(PATABLE_BURST,patable_power_2430,8);
+//                    break;
+//        */
+//        default:                                                             //default is 868.3MHz
+//                    freq2=0x21;
+//                    freq1=0x65;
+//                    freq0=0x6A;
+//                    spi_write_burst(PATABLE_BURST,patable_power_868,8);    //sets up output power ramp register
+//                    break;
+//    }
+//
+//    spi_write_register(FREQ2,freq2);                                         //stores the new freq setting for defined ISM band
+//    spi_write_register(FREQ1,freq1);
+//    spi_write_register(FREQ0,freq0);
+//
+//    spi_write_burst(PATABLE_BURST,Patable,8);                                //writes output power settings to cc1100
 
 //    if(MY_FREQ != ism_freq)
 //    {
